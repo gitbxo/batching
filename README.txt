@@ -4,8 +4,16 @@ How to compile the program:
 
 ( cd ../batchlib && mvn install ) && ( cd ../example && mvn install )
 
-How to run the program:
+How to run the example program:
 java -cp ../batchlib/target/classes:target/classes org.bxo.example.ExampleBatch a b c d e f g h i j k l m n o p
+The parameters are just string data being sent.
+The example program randomly gives the strings to one of batch1 .. batch5
+so that we can check that both batches are processed in a fair manner.
+The example program also shows how to use the library.
+Each type will need a class similar to StringBatch.java.
+For testing I just instantiated StringBatch.java twice, and logged the names.
+The template should be adequate for developers to apply for other examples.
+
 
 How to use the library:
 
@@ -43,6 +51,47 @@ some endpoint is not called for a while, it will still process the given data.
 
 
 TODO Tasks
+
+(1) Add tests
+I like test driven development.
+For this situation, it seemed easier to write the example code and test that.
+The example code shows that multiple batch types are handled.
+
+(2) Rework threading to create multiple threads and manage them
+For a quick deliverable, limiting to one thread which loops over the batch types
+ensures that the app will not have numerous threads running around overloading
+the system as we add more types for batching.
+It does mean that some of the batching would be slower since it goes over all the batches once per second and sees which batches have data to process.
+a. The benefit is we ensure that the batching thread does not overload the system,
+and makes for fast response times.
+b. Disadvantage is that the batching could take longer.  However, this is
+mitigated by at least ensuring that all batches are handled fairly.
+
+(3) Fairness handling
+Fairness is very complex.
+If only one batch type has many batches, then we want to process more of those.
+However, if other batches start producing data, then we need to handle them as well.
+One part of fairness code tries to process batch types with more batches.
+However when there are too many requests for one batch type, we go back
+and check all the batch types to make sure they are not being starved (prevent starvation).
+This is simple, but not perfect fairness code, and could probably be improved.
+
+(4) Dynamic Configuration for batch size and interval
+The library allows developers to pass in the batch type name, batch size
+and interval, so the library itself is configurable.
+It is simple to add in a config file and use those values for configuration
+That will allow changing the batch size and interval dynamically for those
+types which need that capability
+
+(5) Handling data if the program crashed
+The library does not save data to disk, so transactions could be lost
+if there was a crash.  This will take some time to do right, so did not
+work on it, but it is definitely important.  For companion, it is possible
+that some use cases losing some data is not that big a deal, so would
+alert product team and discuss priority here.  E.g. losing one hour of
+dog habits may not significantly affect the value proposition, so it
+would be wise to check with product on whether we need to address
+this or it is fine to postpone for now.
 
 
 https://git-scm.com/docs/git-bundle

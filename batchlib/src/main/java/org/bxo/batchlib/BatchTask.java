@@ -27,12 +27,21 @@ public final class BatchTask extends TimerTask {
         toProcess.addAll(batchList);
         System.out.println("BatchTask started");
 
+        int addCount = 0;
         while (!toProcess.isEmpty()) {
             Batching b = toProcess.poll();
             if (null != b && b.processBatch()) {
                 // if we processed a batch, add it to end of queue
                 // for fairness, loop over all batches to be processed
                 toProcess.add(b);
+                addCount++;
+                if (addCount > batchList.size()) {
+                    // Another fairness consideration
+                    // if one type has 1,000 batches, make sure
+                    // that other batch types are also processed
+                    addCount = 0;
+                    toProcess.addAll(batchList);
+                }
             }
         }
     }
