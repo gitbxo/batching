@@ -4,16 +4,26 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 
 public final class BatchTask extends TimerTask {
 
     private static List<Batching> batchList = new ArrayList<>();
+    private static ConcurrentHashMap<String, String> batchSet = new ConcurrentHashMap<>();
 
     public static void addBatch(Batching batch) {
-        System.out.println("BatchTask new batch " + batch.getBatchName());
-        batchList.add(batch);
+        synchronized (batchList) {
+            String batchName = batch.getBatchName();
+            if (batchSet.containsKey(batchName)) {
+                throw new RuntimeException(
+                    "BatchTask " + batchName + " already exists!");
+            }
+            batchSet.putIfAbsent(batchName, batchName);
+            batchList.add(batch);
+            System.out.println("BatchTask new batch " + batchName);
+        }
     }
 
     /**
