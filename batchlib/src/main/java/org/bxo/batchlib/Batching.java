@@ -31,6 +31,26 @@ public abstract class Batching<T> {
     private final AtomicLong nextTimeMillis;
     private final AtomicInteger maxBatchSize;
     private final Queue<T> queue = new ConcurrentLinkedQueue<>();
+    private final Runnable myRunnable = new Runnable() {
+        @Override
+        public void run() {
+            List<T> batch = new ArrayList<>();
+            for (int i=0; i < maxBatchSize.get(); i++) {
+                T item = queue.poll();
+                if (null == item) {
+                    break;
+                }
+                batch.add(item);
+            }
+
+            if (batch.size() > 0) {
+                System.out.println("Batch " + getBatchName() + " processing " + batch.size() + " items.");
+                process(batch);
+                System.out.println("Batch " + getBatchName() + " processed " + batch.size() + " items.");
+            }
+        }
+    };
+    private Thread myThread = null;
 
     public Batching(String batchName, int maxBatchSize, long delayMillis) {
         this.batchName = batchName;
@@ -66,21 +86,16 @@ public abstract class Batching<T> {
         // Note: if there are too many items in the queue, it will ignore nextTimeMillis
         nextTimeMillis.set(System.currentTimeMillis() + delayMillis.get());
 
-        List<T> batch = new ArrayList<>();
-        for (int i=0; i < maxBatchSize.get(); i++) {
-            T item = queue.poll();
-            if (null == item) {
-                break;
-            }
-            batch.add(item);
-        }
-
-        if (batch.size() == 0) {
+        if (myThread != null && myThread.isAlive()) {
+            // return false if processing is taking a long time
+            // this is to prevent blocking other batches
+            // We also don't want two threads for the same batch type
             return false;
         }
-        System.out.println("Batch " + getBatchName() + " processing " + batch.size() + " items.");
-        process(batch);
-        System.out.println("Batch " + getBatchName() + " processed " + batch.size() + " items.");
+
+        // Start asynchronous thread
+        myThread = new Thread(myRunnable);
+        myThread.start();
         return true;
     }
 

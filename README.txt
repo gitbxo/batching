@@ -2,10 +2,14 @@
 
 How to compile the program:
 
+cd batching/example
 ( cd ../batchlib && mvn install ) && ( cd ../example && mvn install )
 
 How to run the example program:
+
+cd batching/example
 java -cp ../batchlib/target/classes:target/classes org.bxo.example.ExampleBatch a b c d e f g h i j k l m n o p
+
 The parameters are just string data being sent.
 The example program randomly gives the strings to one of batch1 .. batch5
 so that we can check that both batches are processed in a fair manner.
@@ -92,6 +96,14 @@ alert product team and discuss priority here.  E.g. losing one hour of
 dog habits may not significantly affect the value proposition, so it
 would be wise to check with product on whether we need to address
 this or it is fine to postpone for now.
+
+(6) Thread handling
+We are limiting to max one thread per batch type
+Maybe some batch types can handle more than that, but we are not
+taking that into consideration at this time.
+If some batch types take long, they should not block other batch
+types from being processed, so updated the code to process the
+batches in their own threads.
 
 
 https://git-scm.com/docs/git-bundle
